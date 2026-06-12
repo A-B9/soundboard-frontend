@@ -28,9 +28,10 @@ export function clearStoredAuth(): void {
 }
 
 /**
- * The backend speaks three error dialects:
+ * The backend speaks several error dialects:
  *  - RFC 7807 ProblemDetail: { type, title, status, detail, ... }
  *  - simple wrapper:         { error: "..." }   (rate limit, password gate, enums)
+ *  - login failure (400):    { username, token: "", message: "..." }
  *  - bean validation:        { fieldName: "message", ... }
  * Normalise all of them to a single human-readable string.
  */
@@ -47,9 +48,10 @@ async function extractErrorMessage(response: Response): Promise<string> {
   const obj = body as Record<string, unknown>;
   if (typeof obj.error === 'string') return obj.error;
   if (typeof obj.detail === 'string') return obj.detail;
+  if (typeof obj.message === 'string') return obj.message;
 
   // Bean-validation map: field -> message. Join the messages.
-  const values = Object.values(obj).filter((v) => typeof v === 'string');
+  const values = Object.values(obj).filter((v) => typeof v === 'string' && v !== '');
   if (values.length > 0) return values.join('. ');
   return fallback;
 }
