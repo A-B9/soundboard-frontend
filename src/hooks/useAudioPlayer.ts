@@ -112,32 +112,23 @@ export function useAudioPlayer(): UseAudioPlayerResult {
   }
 
   /** Resume the active sound from where it was paused. */
-  function resume(): void {
-    getAudio()
-      .play()
-      .catch(() => setPlaybackError('Could not play audio.'));
-    setIsPaused(false);
-  }
+  // function resume(): void {
+  //   getAudio()
+  //     .play()
+  //     .catch(() => setPlaybackError('Could not play audio.'));
+  //   setIsPaused(false);
+  // }
 
-  /**
-   * Decide what a click on a tile does. The states to consider:
-   *  - nothing is active            → start the clicked sound
-   *  - clicked sound is playing     → pause it
-   *  - clicked sound is paused      → resume it
-   *  - a DIFFERENT sound is active  → switch to the clicked sound
-   *
-   * Available: activeSoundId, isPaused (state above) and the
-   * playSound / pause / resume primitives.
-   *
-   * TODO(human): replace this placeholder (which always restarts the clicked
-   * sound from the top) with the real decision logic.
-   */
+
   function handleTileClick(soundId: string): void {
-    // These two references only silence the unused-variable compiler checks
-    // until your implementation calls pause()/resume() — delete them then.
-    void pause;
-    void resume;
-    void playSound(soundId);
+    if (isPaused && activeSoundId === soundId) {
+      playSound(soundId);
+    } else if (activeSoundId === soundId) {
+      pause();
+    } else {
+      playSound(soundId);
+    }
+
   }
 
   return {
