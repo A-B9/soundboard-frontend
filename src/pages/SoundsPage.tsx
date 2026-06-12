@@ -5,11 +5,19 @@ import { listSounds } from '../api/sounds';
 import type { GetSoundResponse, PagedResponse } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import SoundGrid from '../components/SoundGrid';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import './SoundsPage.css';
 
 function SoundsPage() {
   const { username, logout } = useAuth();
   const navigate = useNavigate();
+  const {
+    activeSoundId,
+    isPaused,
+    loadingSoundId,
+    playbackError,
+    handleTileClick,
+  } = useAudioPlayer();
 
   const [pageData, setPageData] =
     useState<PagedResponse<GetSoundResponse> | null>(null);
@@ -65,8 +73,19 @@ function SoundsPage() {
         {!loading && !error && pageData && pageData.content.length === 0 && (
           <p className="sounds-status">You have no sounds yet.</p>
         )}
+        {playbackError && (
+          <p className="sounds-status sounds-status-error" role="alert">
+            {playbackError}
+          </p>
+        )}
         {!loading && !error && pageData && pageData.content.length > 0 && (
-          <SoundGrid sounds={pageData.content} />
+          <SoundGrid
+            sounds={pageData.content}
+            activeSoundId={activeSoundId}
+            isPaused={isPaused}
+            loadingSoundId={loadingSoundId}
+            onTileClick={handleTileClick}
+          />
         )}
       </main>
     </div>
