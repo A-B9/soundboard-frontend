@@ -18,13 +18,20 @@ import './LoginPage.css';
  *         "Password change required before accessing this resource"
  *  - 0:   network failure, backend unreachable (message set in client.ts)
  *  - anything else: unexpected; fall back to error.message
- *
- * TODO(human): implement the mapping from error.status to the user-facing
- * message, deciding which cases reuse error.message verbatim and which need
- * a friendlier hand-written string.
  */
 function mapLoginError(error: ApiError): string {
-  return error.message;
+  switch (error.status) {
+    case 400:
+      return 'Invalid username or password.';
+    case 429:
+      return 'Too many login attempts. Please try again later.';
+    case 403:
+      return 'Password change required before accessing this resource.';
+    case 0:
+      return 'Unable to connect to the server. Please check your network and try again.';
+    default:
+      return error.message || 'Something went wrong. Please try again.';
+  }
 }
 
 function LoginPage() {
