@@ -1,12 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { listSounds } from '../api/sounds';
-import type { GetSoundResponse, PagedResponse } from '../api/types';
+import { listSounds, searchSounds } from '../api/sounds';
+import type {
+  GetSoundResponse,
+  PagedResponse,
+  SortBy,
+  SoundCategory,
+} from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import SoundGrid from '../components/SoundGrid';
+import Toolbar from '../components/Toolbar';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import './SoundsPage.css';
+
+const PAGE_SIZE = 10;
+const DEBOUNCE_MS = 300;
+
+// The two modes return different shapes: browse is the paged wrapper,
+// search is a plain array (see IMPLEMENTATION_GUIDE.md §4/§7).
+type Results =
+  | { mode: 'browse'; pageData: PagedResponse<GetSoundResponse> }
+  | { mode: 'search'; sounds: GetSoundResponse[] };
 
 function SoundsPage() {
   const { username, logout } = useAuth();
@@ -19,18 +35,47 @@ function SoundsPage() {
     handleTileClick,
   } = useAudioPlayer();
 
-  const [pageData, setPageData] =
-    useState<PagedResponse<GetSoundResponse> | null>(null);
-  const [loading, setLoading] = useState(true);
+  // SoundsPage is the single owner of all query state; Toolbar and (later)
+  // Pagination are dumb controls that report changes back up via callbacks.
+  const [keyword, setKeyword] = useState('');
+  const [category, setCategory] = useState<SoundCategory | ''>('');
+  const [tag, setTag] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('createdAt');
+  const [ascending, setAscending] = useState(true);
+  const [page, setPage] = useState(0);
+
+  // Debounced copies drive the actual requests so fast typing fires one
+  // request, not one per keystroke.
+  const debouncedKeyword = useDebouncedValue(keyword, DEBOUNCE_MS);
+  const debouncedTag = useDebouncedValue(tag, DEBOUNCE_MS);
+
+  const searchMode = debouncedKeyword.trim() !== '';
+
+  const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Strict Mode runs this effect twice in dev; the cancelled flag makes the
-    // unmounted first run drop its response instead of racing the second.
     let cancelled = false;
-    listSounds()
-      .then((page) => {
-        if (!cancelled) setPageData(page);
+    const request: Promise<Results> = searchMode
+      ? searchSounds(debouncedKeyword.trim()).then((sounds) => ({
+          mode: 'search' as const,
+          sounds,
+        }))
+      : listSounds({
+          page,
+          size: PAGE_SIZE,
+          sortBy,
+          ascending,
+          category,
+          tag: debouncedTag.trim(),
+        }).then((pageData) => ({ mode: 'browse' as const, pageData }));
+
+    request
+      .then((next) => {
+        if (!cancelled) {
+          setResults(next);
+          setError(null);
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -38,19 +83,55 @@ function SoundsPage() {
             err instanceof ApiError ? err.message : 'Something went wrong.',
           );
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [
+    searchMode,
+    debouncedKeyword,
+    debouncedTag,
+    category,
+    sortBy,
+    ascending,
+    page,
+  ]);
+
+  // Filter/sort changes restart browsing from the first page. Doing it in the
+  // event handlers (not an effect) keeps the state change atomic with its cause.
+  function changeCategory(next: SoundCategory | '') {
+    setCategory(next);
+    setPage(0);
+  }
+  function changeTag(next: string) {
+    setTag(next);
+    setPage(0);
+  }
+  function changeSortBy(next: SortBy) {
+    setSortBy(next);
+    setPage(0);
+  }
+  function toggleAscending() {
+    setAscending((prev) => !prev);
+    setPage(0);
+  }
+  function changeKeyword(next: string) {
+    setKeyword(next);
+    setPage(0); // leaving search mode should land back on the first page
+  }
 
   function handleLogout() {
     logout();
     navigate('/login', { replace: true });
   }
+
+  const sounds: GetSoundResponse[] | null =
+    results === null
+      ? null
+      : results.mode === 'browse'
+        ? results.pageData.content
+        : results.sounds;
+  const loading = results === null && error === null;
 
   return (
     <div className="sounds-page">
@@ -64,23 +145,40 @@ function SoundsPage() {
         </div>
       </header>
       <main className="sounds-main">
+        <Toolbar
+          keyword={keyword}
+          category={category}
+          tag={tag}
+          sortBy={sortBy}
+          ascending={ascending}
+          searchMode={searchMode}
+          onKeywordChange={changeKeyword}
+          onCategoryChange={changeCategory}
+          onTagChange={changeTag}
+          onSortByChange={changeSortBy}
+          onAscendingToggle={toggleAscending}
+        />
         {loading && <p className="sounds-status">Loading sounds…</p>}
         {!loading && error && (
           <p className="sounds-status sounds-status-error" role="alert">
             {error}
           </p>
         )}
-        {!loading && !error && pageData && pageData.content.length === 0 && (
-          <p className="sounds-status">You have no sounds yet.</p>
-        )}
         {playbackError && (
           <p className="sounds-status sounds-status-error" role="alert">
             {playbackError}
           </p>
         )}
-        {!loading && !error && pageData && pageData.content.length > 0 && (
+        {!loading && !error && sounds && sounds.length === 0 && (
+          <p className="sounds-status">
+            {searchMode
+              ? 'No sounds match your search.'
+              : 'No sounds found.'}
+          </p>
+        )}
+        {!loading && !error && sounds && sounds.length > 0 && (
           <SoundGrid
-            sounds={pageData.content}
+            sounds={sounds}
             activeSoundId={activeSoundId}
             isPaused={isPaused}
             loadingSoundId={loadingSoundId}
