@@ -36,3 +36,13 @@
 .sounds-main {
   padding-top: 16px;
 }
+
+.sounds-status {
+  margin: 32px 0;
+  text-align: center;
+  color: #59636e;
+}
+
+.sounds-status-error {
+  color: #a40e26;
+}

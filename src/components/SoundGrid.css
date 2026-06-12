@@ -1,0 +1,7 @@
+.sound-grid {
+  display: grid;
+  /* Placeholder layout — Phase 8 replaces this with a responsive
+     auto-fill/minmax rule (LEARN-BY-DOING). */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
