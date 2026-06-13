@@ -15,6 +15,7 @@ import SoundGrid from '../components/SoundGrid';
 import Toolbar from '../components/Toolbar';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useHotkeys } from '../hooks/useHotkeys';
 import './SoundsPage.css';
 
 const PAGE_SIZE = 10;
@@ -56,6 +57,26 @@ function SoundsPage() {
   const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+
+  // Board Mode: lock the UI and trigger sounds by keyboard hotkeys.
+  const [boardMode, setBoardMode] = useState(false);
+  const { hotkeys, setHotkey, clearHotkey, soundIdForKey } = useHotkeys();
+
+  // Only while Board Mode is on, a global key press plays its assigned sound.
+  useEffect(() => {
+    if (!boardMode) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      // Leave browser/OS shortcuts alone.
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const soundId = soundIdForKey(event.key);
+      if (soundId) {
+        event.preventDefault();
+        handleTileClick(soundId);
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [boardMode, soundIdForKey, handleTileClick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -169,6 +190,14 @@ function SoundsPage() {
       <header className="sounds-header">
         <h1>Soundboard</h1>
         <div className="sounds-header-user">
+          <button
+            type="button"
+            className={`board-toggle${boardMode ? ' is-on' : ''}`}
+            aria-pressed={boardMode}
+            onClick={() => setBoardMode((on) => !on)}
+          >
+            BOARD
+          </button>
           <span>{username}</span>
           <button type="button" onClick={handleLogout}>
             Log out
@@ -188,6 +217,7 @@ function SoundsPage() {
           onTagChange={changeTag}
           onSortByChange={changeSortBy}
           onAscendingToggle={toggleAscending}
+          locked={boardMode}
         />
         {loading && <p className="sounds-status">Loading sounds…</p>}
         {!loading && error && (
@@ -218,12 +248,17 @@ function SoundsPage() {
             activeSoundId={activeSoundId}
             isPaused={isPaused}
             loadingSoundId={loadingSoundId}
+            boardMode={boardMode}
+            hotkeys={hotkeys}
             onTileClick={handleTileClick}
             onEditSound={handleEditSound}
+            onSetHotkey={setHotkey}
+            onClearHotkey={clearHotkey}
           />
         )}
         {!loading &&
           !error &&
+          !boardMode &&
           results?.mode === 'browse' &&
           results.pageData.totalPages > 1 && (
             <Pagination

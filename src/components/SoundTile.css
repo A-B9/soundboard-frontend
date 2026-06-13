@@ -72,6 +72,22 @@
   font-weight: 600;
 }
 
+/* Dark chip with light text so the assigned key stays legible on any tile. */
+.sound-tile-hotkey {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+}
+
+/* In Board Mode the play area is disabled; keep it fully visible (no dimming)
+   but drop the pointer cursor since clicking does nothing. */
+.sound-tile-play:disabled {
+  cursor: default;
+}
+
 .sound-tile-menu-button {
   position: absolute;
   top: 8px;
@@ -187,4 +203,28 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.sound-tile-menu-hotkey {
+  display: flex;
+  gap: 6px;
+  font-weight: 400;
+}
+
+.sound-tile-menu-hotkey > button {
+  padding: 6px 8px;
+  font-size: 13px;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sound-tile-menu-hotkey > button:first-child {
+  flex: 1;
+}
+
+.sound-tile-hotkey-listening {
+  color: #1f6feb;
+  border-color: #1f6feb;
 }

@@ -9,8 +9,12 @@ interface SoundGridProps {
   activeSoundId: string | null;
   isPaused: boolean;
   loadingSoundId: string | null;
+  boardMode: boolean;
+  hotkeys: Record<string, string>;
   onTileClick: (soundId: string) => void;
   onEditSound: (soundId: string, patch: SoundPatch) => void;
+  onSetHotkey: (soundId: string, key: string) => void;
+  onClearHotkey: (soundId: string) => void;
 }
 
 function tileState(
@@ -23,7 +27,8 @@ function tileState(
 }
 
 function SoundGrid(props: SoundGridProps) {
-  const { sounds, onTileClick, onEditSound } = props;
+  const { sounds, boardMode, hotkeys, onTileClick, onEditSound, onSetHotkey, onClearHotkey } =
+    props;
   return (
     <div className="sound-grid">
       {sounds.map((sound) => (
@@ -31,8 +36,12 @@ function SoundGrid(props: SoundGridProps) {
           key={sound.id}
           sound={sound}
           state={tileState(sound, props)}
+          hotkey={hotkeys[sound.id]}
+          boardMode={boardMode}
           onClick={onTileClick}
           onEdit={onEditSound}
+          onSetHotkey={onSetHotkey}
+          onClearHotkey={onClearHotkey}
         />
       ))}
     </div>

@@ -9,8 +9,14 @@ import './SoundTile.css';
 interface SoundTileProps {
   sound: GetSoundResponse;
   state: TileState;
+  /** Key assigned to this sound, or undefined. */
+  hotkey: string | undefined;
+  /** Board Mode locks clicks/editing; only hotkey playback works. */
+  boardMode: boolean;
   onClick: (soundId: string) => void;
   onEdit: (soundId: string, patch: SoundPatch) => void;
+  onSetHotkey: (soundId: string, key: string) => void;
+  onClearHotkey: (soundId: string) => void;
 }
 
 const STATE_BADGES: Record<Exclude<TileState, 'idle'>, string> = {
@@ -18,6 +24,12 @@ const STATE_BADGES: Record<Exclude<TileState, 'idle'>, string> = {
   playing: '▶ Playing',
   paused: '⏸ Paused',
 };
+
+/** Friendly label for a stored key value. */
+function keyLabel(key: string): string {
+  if (key === ' ') return 'Space';
+  return key.length === 1 ? key.toUpperCase() : key;
+}
 
 /**
  * A colour derived from the sound id — looks random across tiles but is stable
@@ -41,9 +53,19 @@ function tileColours(id: string): { background: string; color: string } {
   };
 }
 
-function SoundTile({ sound, state, onClick, onEdit }: SoundTileProps) {
+function SoundTile({
+  sound,
+  state,
+  hotkey,
+  boardMode,
+  onClick,
+  onEdit,
+  onSetHotkey,
+  onClearHotkey,
+}: SoundTileProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [listening, setListening] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const colours = tileColours(sound.id);
 
@@ -58,6 +80,24 @@ function SoundTile({ sound, state, onClick, onEdit }: SoundTileProps) {
     document.addEventListener('mousedown', handlePointerDown);
     return () => document.removeEventListener('mousedown', handlePointerDown);
   }, [menuOpen]);
+
+  // While "listening", capture the next non-modifier key as this tile's hotkey.
+  useEffect(() => {
+    if (!listening) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      event.preventDefault();
+      if (event.key === 'Escape') {
+        setListening(false);
+        return;
+      }
+      // Ignore standalone modifier presses; wait for a real key.
+      if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
+      onSetHotkey(sound.id, event.key);
+      setListening(false);
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [listening, onSetHotkey, sound.id]);
 
   function handleCategoryChange(value: string) {
     onEdit(sound.id, { category: value === '' ? null : (value as SoundCategory) });
@@ -81,13 +121,14 @@ function SoundTile({ sound, state, onClick, onEdit }: SoundTileProps) {
   return (
     <article
       ref={rootRef}
-      className={`sound-tile sound-tile-${state}`}
+      className={`sound-tile sound-tile-${state}${boardMode ? ' sound-tile-locked' : ''}`}
       style={colours}
     >
       <button
         type="button"
         className="sound-tile-play"
         onClick={() => onClick(sound.id)}
+        disabled={boardMode}
         aria-pressed={state === 'playing'}
       >
         <span className="sound-tile-name">{sound.name}</span>
@@ -98,6 +139,9 @@ function SoundTile({ sound, state, onClick, onEdit }: SoundTileProps) {
           <span className="sound-tile-state">{STATE_BADGES[state]}</span>
         )}
         <span className="sound-tile-meta">
+          {hotkey && (
+            <span className="sound-tile-hotkey">⌨ {keyLabel(hotkey)}</span>
+          )}
           {sound.category && (
             <span className="sound-tile-category">{sound.category}</span>
           )}
@@ -109,18 +153,20 @@ function SoundTile({ sound, state, onClick, onEdit }: SoundTileProps) {
         </span>
       </button>
 
-      <button
-        type="button"
-        className="sound-tile-menu-button"
-        aria-label="Edit sound"
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((open) => !open)}
-      >
-        ⋮
-      </button>
+      {!boardMode && (
+        <button
+          type="button"
+          className="sound-tile-menu-button"
+          aria-label="Edit sound"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          ⋮
+        </button>
+      )}
 
-      {menuOpen && (
+      {menuOpen && !boardMode && (
         <div className="sound-tile-menu" role="menu">
           <label className="sound-tile-menu-field">
             <span>Category</span>
@@ -166,6 +212,35 @@ function SoundTile({ sound, state, onClick, onEdit }: SoundTileProps) {
               />
               <button type="submit">Add</button>
             </form>
+          </div>
+
+          <div className="sound-tile-menu-field">
+            <span>Hotkey</span>
+            <div className="sound-tile-menu-hotkey">
+              {listening ? (
+                <button
+                  type="button"
+                  className="sound-tile-hotkey-listening"
+                  onClick={() => setListening(false)}
+                >
+                  Press a key… (Esc to cancel)
+                </button>
+              ) : (
+                <button type="button" onClick={() => setListening(true)}>
+                  {hotkey ? `Change (${keyLabel(hotkey)})` : 'Set hotkey'}
+                </button>
+              )}
+              {hotkey && !listening && (
+                <button
+                  type="button"
+                  aria-label="Clear hotkey"
+                  className="sound-tile-hotkey-clear"
+                  onClick={() => onClearHotkey(sound.id)}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

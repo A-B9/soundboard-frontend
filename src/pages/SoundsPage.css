@@ -37,6 +37,45 @@
   border-color: #1f6feb;
 }
 
+/* Crimson 3D toggle. The stacked box-shadow — a solid darker-crimson "edge"
+   plus a soft drop shadow — makes the button look raised; pressing it (active
+   or the on-state) translates it down and shrinks the edge so it reads as
+   pushed in. Selector is scoped under .sounds-header-user to outrank the
+   generic header-button styles above. */
+.sounds-header-user .board-toggle {
+  padding: 8px 18px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #fff;
+  background: #dc143c;
+  border: none;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 0 #9e0e2b,
+    0 6px 12px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.05s ease,
+    box-shadow 0.05s ease,
+    background 0.1s ease;
+}
+
+.sounds-header-user .board-toggle:hover {
+  background: #e83154;
+  border: none;
+}
+
+.sounds-header-user .board-toggle:active,
+.sounds-header-user .board-toggle.is-on {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 #9e0e2b,
+    0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.sounds-header-user .board-toggle.is-on {
+  background: #b21031;
+}
+
 .sounds-main {
   padding-top: 16px;
 }

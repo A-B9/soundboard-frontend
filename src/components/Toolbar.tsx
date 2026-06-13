@@ -18,6 +18,8 @@ interface ToolbarProps {
   /** True while a search keyword is active: filter/sort controls are disabled
       because the search endpoint ignores them. */
   searchMode: boolean;
+  /** True in Board Mode: every control (including search) is disabled. */
+  locked: boolean;
   onKeywordChange: (keyword: string) => void;
   onCategoryChange: (category: SoundCategory | '') => void;
   onTagChange: (tag: string) => void;
@@ -32,12 +34,16 @@ function Toolbar({
   sortBy,
   ascending,
   searchMode,
+  locked,
   onKeywordChange,
   onCategoryChange,
   onTagChange,
   onSortByChange,
   onAscendingToggle,
 }: ToolbarProps) {
+  // Filter/sort controls are off during search OR board lock; search itself is
+  // only off during board lock.
+  const filtersDisabled = searchMode || locked;
   return (
     <div className="toolbar">
       <input
@@ -46,12 +52,13 @@ function Toolbar({
         placeholder="Search sounds…"
         value={keyword}
         maxLength={100}
+        disabled={locked}
         onChange={(e) => onKeywordChange(e.target.value)}
       />
       <select
         aria-label="Filter by category"
         value={category}
-        disabled={searchMode}
+        disabled={filtersDisabled}
         onChange={(e) => onCategoryChange(e.target.value as SoundCategory | '')}
       >
         <option value="">All categories</option>
@@ -67,13 +74,13 @@ function Toolbar({
         placeholder="Filter by tag…"
         aria-label="Filter by tag"
         value={tag}
-        disabled={searchMode}
+        disabled={filtersDisabled}
         onChange={(e) => onTagChange(e.target.value)}
       />
       <select
         aria-label="Sort by"
         value={sortBy}
-        disabled={searchMode}
+        disabled={filtersDisabled}
         onChange={(e) => onSortByChange(e.target.value as SortBy)}
       >
         {SORT_OPTIONS.map((s) => (
@@ -85,7 +92,7 @@ function Toolbar({
       <button
         type="button"
         className="toolbar-direction"
-        disabled={searchMode}
+        disabled={filtersDisabled}
         onClick={onAscendingToggle}
         title={ascending ? 'Ascending — click for descending' : 'Descending — click for ascending'}
       >
