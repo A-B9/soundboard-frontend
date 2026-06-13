@@ -3,13 +3,47 @@
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
+  border-radius: 10px;
   /* background + text colour are set inline from the sound id */
+
+  /* Raised 3D look, the same trick as the BOARD button: a solid translucent
+     "edge" under the tile plus a soft drop shadow. A CSS variable holds the
+     depth so the playing/paused ring can stack on top of it. */
+  --tile-depth: 0 5px 0 rgba(0, 0, 0, 0.22), 0 8px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--tile-depth);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+/* :active falls through from the inner play button, so pressing a tile pushes
+   it down and shrinks the edge — like physically clicking a key. */
+.sound-tile:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 7px 0 rgba(0, 0, 0, 0.22),
+    0 12px 20px rgba(0, 0, 0, 0.28);
+}
+
+.sound-tile:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.22),
+    0 3px 8px rgba(0, 0, 0, 0.25);
 }
 
 .sound-tile-playing,
 .sound-tile-paused {
-  box-shadow: 0 0 0 2px #1f6feb;
+  box-shadow:
+    0 0 0 2px #1f6feb,
+    var(--tile-depth);
+}
+
+/* Board Mode tiles are locked: keep them raised but static (no lift/press). */
+.sound-tile-locked:hover,
+.sound-tile-locked:active {
+  transform: none;
+  box-shadow: var(--tile-depth);
 }
 
 .sound-tile-loading {
