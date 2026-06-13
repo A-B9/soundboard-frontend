@@ -9,8 +9,36 @@ body {
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   color: #1f2328;
-  background: #c77dff; /* fluorescent lilac */
   -webkit-font-smoothing: antialiased;
+
+  /* Layered background, painted bottom-to-top in CSS:
+     1. base: a 135deg metallic white→grey sheen from top-left to bottom-right
+     2. a faint cyan shimmer in the corner for a chromatic/iridescent edge
+     3. the lilac itself, a radial glow anchored at the bottom-right corner
+        that fades out by ~32% radius so it only fills ~the bottom-right 25%.
+     min-height + fixed attachment map the gradient to the viewport so it
+     covers the screen and stays put while scrolling. */
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      130% 120% at 100% 100%,
+      #c77dff 0%,
+      rgba(196, 140, 255, 0.55) 14%,
+      rgba(199, 125, 255, 0) 32%
+    ),
+    radial-gradient(
+      70% 70% at 90% 92%,
+      rgba(120, 200, 255, 0.22) 0%,
+      rgba(120, 200, 255, 0) 24%
+    ),
+    linear-gradient(
+      135deg,
+      #fbfbfc 0%,
+      #eef0f3 48%,
+      #e2e4ea 72%,
+      #d8d2e3 100%
+    );
+  background-attachment: fixed;
 }
 
 /* A single visible focus ring for every keyboard-focusable control.
