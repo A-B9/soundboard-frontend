@@ -49,6 +49,10 @@
   cursor: pointer;
 }
 
+.login-card button:hover:not(:disabled) {
+  background: #1a5fd0;
+}
+
 .login-card button:disabled {
   opacity: 0.6;
   cursor: default;

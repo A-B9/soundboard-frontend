@@ -12,3 +12,15 @@ body {
   background: #f6f8fa;
   -webkit-font-smoothing: antialiased;
 }
+
+/* A single visible focus ring for every keyboard-focusable control.
+   :focus-visible (not :focus) only shows it for keyboard navigation, so
+   mouse clicks don't leave a lingering outline. */
+:focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 2px;
+}
+
+button {
+  font-family: inherit;
+}
