@@ -2,25 +2,8 @@
   display: grid;
   gap: 16px;
 
-  /*
-   * TODO(human): make the columns responsive.
-   *
-   * Right now this is a fixed 3-column grid: it overflows on a narrow phone
-   * and leaves big gaps on a wide screen. The idiomatic CSS Grid fix is a
-   * single `grid-template-columns` rule using repeat() + minmax(), with no
-   * media queries — the grid reflows itself based on available width.
-   *
-   * The pieces to combine:
-   *   grid-template-columns: repeat(<count>, minmax(<min>, 1fr));
-   *   - minmax(220px, 1fr): each column is at least 220px, but grows to share
-   *     leftover space equally (1fr).
-   *   - <count> is either `auto-fill` or `auto-fit`. Both pack as many columns
-   *     as fit. They differ only when there are FEWER items than fit: auto-fill
-   *     keeps the empty column tracks (tiles stay left-aligned, narrower),
-   *     auto-fit collapses them (the few tiles stretch to fill the row).
-   *
-   * Pick auto-fill or auto-fit, choose a sensible min width, and replace the
-   * line below. Resize the window to see the column count change.
-   */
-  grid-template-columns: repeat(3, 1fr);
+  /* Responsive columns with no media queries: pack as many 220px-min columns
+     as fit, each growing to share leftover space. auto-fit collapses empty
+     tracks so a few tiles stretch to fill the row. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
