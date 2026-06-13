@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { listSounds, searchSounds } from '../api/sounds';
+import { listSounds, patchSound, searchSounds } from '../api/sounds';
+import type { SoundPatch } from '../api/sounds';
 import type {
   GetSoundResponse,
   PagedResponse,
@@ -54,6 +55,7 @@ function SoundsPage() {
 
   const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -121,6 +123,34 @@ function SoundsPage() {
     setPage(0); // leaving search mode should land back on the first page
   }
 
+  // Persist a category/tag edit, then patch the matching sound in local state
+  // so the tile updates immediately. We apply the change we sent (not the
+  // PATCH response), and only after the server confirms success.
+  async function handleEditSound(id: string, patch: SoundPatch) {
+    try {
+      await patchSound(id, patch);
+      setEditError(null);
+      setResults((prev) => {
+        if (prev === null) return prev;
+        const update = (s: GetSoundResponse) =>
+          s.id === id ? { ...s, ...patch } : s;
+        return prev.mode === 'browse'
+          ? {
+              mode: 'browse',
+              pageData: {
+                ...prev.pageData,
+                content: prev.pageData.content.map(update),
+              },
+            }
+          : { mode: 'search', sounds: prev.sounds.map(update) };
+      });
+    } catch (err) {
+      setEditError(
+        err instanceof ApiError ? err.message : 'Could not update the sound.',
+      );
+    }
+  }
+
   function handleLogout() {
     logout();
     navigate('/login', { replace: true });
@@ -170,6 +200,11 @@ function SoundsPage() {
             {playbackError}
           </p>
         )}
+        {editError && (
+          <p className="sounds-status sounds-status-error" role="alert">
+            {editError}
+          </p>
+        )}
         {!loading && !error && sounds && sounds.length === 0 && (
           <p className="sounds-status">
             {searchMode
@@ -184,6 +219,7 @@ function SoundsPage() {
             isPaused={isPaused}
             loadingSoundId={loadingSoundId}
             onTileClick={handleTileClick}
+            onEditSound={handleEditSound}
           />
         )}
         {!loading &&

@@ -125,6 +125,15 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   return (await response.json()) as T;
 }
 
+/**
+ * Send a request for its side effect only (e.g. PATCH) and discard the body.
+ * Use this for mutations where the response shape is unknown or empty — the
+ * caller updates local state from what it sent, not from the response.
+ */
+export async function apiSend(path: string, options: RequestOptions = {}): Promise<void> {
+  await rawFetch(path, options);
+}
+
 /** Fetch binary content (audio download) as a Blob. */
 export async function apiFetchBlob(path: string): Promise<Blob> {
   const response = await rawFetch(path);

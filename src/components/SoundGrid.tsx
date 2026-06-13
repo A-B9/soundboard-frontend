@@ -1,3 +1,4 @@
+import type { SoundPatch } from '../api/sounds';
 import type { GetSoundResponse } from '../api/types';
 import type { TileState } from '../hooks/useAudioPlayer';
 import SoundTile from './SoundTile';
@@ -9,6 +10,7 @@ interface SoundGridProps {
   isPaused: boolean;
   loadingSoundId: string | null;
   onTileClick: (soundId: string) => void;
+  onEditSound: (soundId: string, patch: SoundPatch) => void;
 }
 
 function tileState(
@@ -21,7 +23,7 @@ function tileState(
 }
 
 function SoundGrid(props: SoundGridProps) {
-  const { sounds, onTileClick } = props;
+  const { sounds, onTileClick, onEditSound } = props;
   return (
     <div className="sound-grid">
       {sounds.map((sound) => (
@@ -30,6 +32,7 @@ function SoundGrid(props: SoundGridProps) {
           sound={sound}
           state={tileState(sound, props)}
           onClick={onTileClick}
+          onEdit={onEditSound}
         />
       ))}
     </div>

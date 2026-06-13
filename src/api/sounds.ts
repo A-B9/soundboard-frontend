@@ -1,10 +1,17 @@
-import { apiFetch, apiFetchBlob } from './client';
+import { apiFetch, apiFetchBlob, apiSend } from './client';
 import type {
   GetSoundResponse,
   PagedResponse,
   SortBy,
   SoundCategory,
 } from './types';
+
+// The fields PATCH /sounds/{id} accepts in v1. A sound has exactly one
+// category (null clears it) and a flat list of tags.
+export type SoundPatch = {
+  category?: SoundCategory | null;
+  tags?: string[];
+};
 
 // A type alias (not an interface) so it stays assignable to the generic
 // params record in client.ts.
@@ -33,4 +40,8 @@ export function searchSounds(keyword: string): Promise<GetSoundResponse[]> {
 
 export function getAudioBlob(id: string): Promise<Blob> {
   return apiFetchBlob(`/sounds/${id}/download`);
+}
+
+export function patchSound(id: string, patch: SoundPatch): Promise<void> {
+  return apiSend(`/sounds/${id}`, { method: 'PATCH', body: patch });
 }
