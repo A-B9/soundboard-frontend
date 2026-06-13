@@ -9,6 +9,7 @@ import type {
   SoundCategory,
 } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import Pagination from '../components/Pagination';
 import SoundGrid from '../components/SoundGrid';
 import Toolbar from '../components/Toolbar';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
@@ -185,6 +186,18 @@ function SoundsPage() {
             onTileClick={handleTileClick}
           />
         )}
+        {!loading &&
+          !error &&
+          results?.mode === 'browse' &&
+          results.pageData.totalPages > 1 && (
+            <Pagination
+              page={results.pageData.page}
+              totalPages={results.pageData.totalPages}
+              first={results.pageData.first}
+              last={results.pageData.last}
+              onPageChange={setPage}
+            />
+          )}
       </main>
     </div>
   );
